@@ -18,3 +18,5 @@ To run a script, open a _Code Browser_ window. (Click the button with the dragon
 * A script to annotate TRAPs (OS calls) according to function number.
 * A script to handle Line A (low level graphic) calls.
 * Importing symbol table in programs, if present.
+* Adding labels for OS variables and hardware addresses. (Can already be done with the ImportSymbolsScript.py that comes with Ghidra, when you provide a text file with symbols.)
+
