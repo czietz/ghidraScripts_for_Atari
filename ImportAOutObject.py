@@ -110,7 +110,10 @@ aout.seek(header_size + text_size + data_size + tr_size + dr_size)
 symbol_table = aout.read(sym_size)
 
 # read and parse string table
-string_size, = struct.unpack(">L", aout.read(4))
+try:
+    string_size, = struct.unpack(">L", aout.read(4))
+except:
+    string_size = 0 # in case already at EOF => no string_table
 string_table = aout.read(string_size)
 # strings = string_table.decode("ascii").split("\0")
 
@@ -119,8 +122,8 @@ symbols = []
 for (n_strx, n_type, n_other, n_desc, n_value) in my_iter_unpack(">lBbhL", symbol_table):
     n_strx -= 4 # because we read the first four byte separately
     n_name = get_string(string_table, n_strx)
-    n_type &= 0x1e # mask for type
-    if n_type == 0x00: # undefined or common
+    n_type &= 0x1f # mask for type
+    if n_type == 0x00 or n_type == 0x01: # undefined or common
         if n_value == 0: # undefined=external symbol
             # create external symbol arbitrarily sized 4 bytes
             n_addr = ext_addr + ext_size
@@ -129,13 +132,13 @@ for (n_strx, n_type, n_other, n_desc, n_value) in my_iter_unpack(">lBbhL", symbo
             # add to bss
             n_addr = bss_addr + bss_size
             bss_size += n_value
-    elif n_type == 0x02: # absolute
+    elif n_type == 0x02 or n_type == 0x03 or n_type == 0x0e: # absolute
         n_addr = n_value
-    elif n_type == 0x04: # text
+    elif n_type == 0x04 or n_type == 0x05 or n_type == 0x0f: # text
         n_addr = n_value + text_addr
-    elif n_type == 0x06: # data
+    elif n_type == 0x06 or n_type == 0x07 or n_type == 0x10: # data
         n_addr = n_value + data_addr - text_size
-    elif n_type == 0x08: # bss
+    elif n_type == 0x08 or n_type == 0x09 or n_type == 0x11: # bss
         n_addr = n_value + bss_addr - text_size - data_size
     else:
         print("Unknown symbol type %d" % n_type)
