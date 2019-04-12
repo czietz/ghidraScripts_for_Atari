@@ -11,13 +11,12 @@ Copy the scripts into a script directory. By default, Ghidra looks into `$USER_H
 To run a script, open a _Code Browser_ window. (Click the button with the dragon in the Ghidra project manager.) Open the _Script Manager_ (Window -> Script Manager). Right-click on the script and select _Run_.
 
 ## Short description of scripts
-* __ImportAtariPRG.py__: Imports a TOS program (PRG, TOS, TTP, APP, ...) into Ghidra. It creates a memory map for TEXT, DATA and BSS sections from the program header.
+* __ImportAtariPRG.py__: Imports a TOS program (PRG, TOS, TTP, APP, ...) into Ghidra. It creates a memory map for TEXT, DATA and BSS sections from the program header. It can also optionally import a symbol table in DRI/GST format, the creation of which is supported by many compilers. (For m68k-atari-mint-gcc use the `-Wl,--traditional` option to create a suitable symbol table.)
 * __ImportAtariTOS.py__: Imports a TOS ROM image into Ghidra. It automatically determines the correct address range from the header. Optionally, when importing an EmuTOS image, you can load a symbol file created by the `map2sym.sh` script provided with EmuTOS. In that case public symbols will be named correctly in Ghidra. (Click _Cancel_ if you don't want to load a symbol file.)
 * __ImportAOutObject.py__: Imports an object (.o) file in the a.out file format, as created by m68k-atari-mint-gcc/m68k-atari-mint-gas. It creates sections for TEXT, DATA, BSS and external symbols and imports the symbols from the symbol table.
 
 ## Ideas for future development
 * A script to annotate TRAPs (OS calls) according to function number.
 * A script to handle Line A (low level graphic) calls.
-* Importing symbol table in programs, if present.
 * Adding labels for OS variables and hardware addresses. (Can already be done with the ImportSymbolsScript.py that comes with Ghidra, when you provide a text file with symbols.)
 

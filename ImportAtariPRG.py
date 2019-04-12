@@ -25,6 +25,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import struct
+import jarray
 
 # Arbitrary address to relocate program to
 reloc_addr = 0x10000
@@ -36,6 +38,7 @@ file = askFile("Please specify a file to import", "Import")
 lang = getDefaultLanguage(ghidra.program.model.lang.Processor.findOrPossiblyCreateProcessor("68000"))
 comp = lang.getDefaultCompilerSpec()
 program = importFileAsBinary(file, lang, comp)
+flat = ghidra.program.flatapi.FlatProgramAPI(program)
 
 # Initialize some variables
 txn = program.startTransaction("Import program")
@@ -52,6 +55,12 @@ len_text = mem.getInt(start.add(0x2))
 len_data = mem.getInt(start.add(0x6))
 len_bss  = mem.getInt(start.add(0xa))
 len_sym  = mem.getInt(start.add(0xe))
+
+# Keep symbol table for later use
+if len_sym > 0:
+    sym_table = jarray.zeros(len_sym, "b")
+    mem.getBytes(start.add(0x1c+len_text+len_data), sym_table)
+    sym_table = bytearray(sym_table) # to native Python type
 
 # Relocate program
 prg = start.add(0x1c)
@@ -106,8 +115,36 @@ bl_bss.setWrite(True)
 frag = program.getTreeManager().getFragment(ghidra.program.database.module.TreeManager.DEFAULT_TREE_NAME, start)
 frag.setName("Header, TEXT, DATA")
 
+# Import symbol table if the user wants to
+# Primitive plausibility check: a DRI/GST symbol table size always is a multiple of 14
+if len_sym > 0 and (len_sym % struct.calcsize(">8sHL")) == 0 and askYesNo("Import", "Import symbol table?") == True:
+    s_ptr = 0
+    while s_ptr < len_sym:
+        s_name, s_id, s_addr = struct.unpack_from(">8sHL", bytes(sym_table), s_ptr)
+        s_ptr += struct.calcsize(">8sHL")
+
+        # extended GST format: read name from next slot
+        if s_id & 0x48 != 0:
+            s_name = s_name + struct.unpack_from(">14s",  bytes(sym_table), s_ptr)[0]
+            s_ptr += struct.calcsize(">14s")
+
+        s_name = s_name.rstrip("\0")
+
+        # skip symbols containing file names
+        if s_name[-2:] == ".o" or s_name[-2:] == ".a" or s_name[0] == "/":
+            continue
+
+        s_type = s_id & 0xf00
+        if s_type == 0x200: # TEXT
+            flat.createLabel(text_start.add(s_addr), s_name, False)
+        elif s_type == 0x400: # DATA
+            flat.createLabel(data_start.add(s_addr), s_name, False)
+        elif s_type == 0x100: # BSS
+            flat.createLabel(bss_start.add(s_addr),  s_name, False)
+        else: # unsupported type
+            pass
+
 # Add some labels
-flat = ghidra.program.flatapi.FlatProgramAPI(program)
 flat.createDwords(start.add(0x2), 4)
 flat.createLabel(start.add(0x2), "TEXT_LEN", True)
 flat.createLabel(start.add(0x6), "DATA_LEN", True)
