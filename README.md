@@ -15,9 +15,10 @@ To run a script, open a _Code Browser_ window. (Click the button with the dragon
 * __ImportAtariTOS.py__: Imports a TOS ROM image into Ghidra. It automatically determines the correct address range from the header. Optionally, when importing an EmuTOS image, you can load a symbol file created by the `map2sym.sh` script provided with EmuTOS. In that case public symbols will be named correctly in Ghidra. (Click _Cancel_ if you don't want to load a symbol file.)
 * __ImportAOutObject.py__: Imports an object (.o) file in the a.out file format, as created by m68k-atari-mint-gcc/m68k-atari-mint-gas. It creates sections for TEXT, DATA, BSS and external symbols and imports the symbols from the symbol table.
 * __mintlib.fidbf__: A nice feature of Ghidra is _Function ID_. Quoting the [documentation](https://ghidra.online/Ghidra/Features/FunctionID/lib/FunctionID.jar/help/topics/FunctionID/FunctionID.html): »Function ID is an analyzer that performs function identification analysis on a program. [...] Function ID is suitable for identifying statically linked libraries [...]. Because of the hashing strategy, functions remain identifiable even if the library is relocated during linking.« This file is a database for MiNTLib as provided by [Vincent Rivière's m68k-atari-mint cross-tools](http://vincent.riviere.free.fr/soft/m68k-atari-mint/). Currently it only contains the standard C library for the 68000 target. `mintlib.fidbf` needs to be copied to `Ghidra/Features/FunctionID/data`. When loading a program built using this MiNTLib version, Ghidra can be told via Analysis -> One Shot -> Function ID to identify any standard library functions, greatly simplifying analysis of unknown programs.
+* __system_variables.txt__: A list of system variables from [tos.hyp](https://freemint.github.io/tos.hyp/en/bios_sysvars.html). To import, use ImportSymbolsScript.py that comes with Ghidra.
 
 ## Ideas for future development
 * A script to annotate TRAPs (OS calls) according to function number.
 * A script to handle Line A (low level graphic) calls.
-* Adding labels for OS variables and hardware addresses. (Can already be done with the ImportSymbolsScript.py that comes with Ghidra, when you provide a text file with symbols.)
+* Adding hardware addresses to system_variables.txt.
 
