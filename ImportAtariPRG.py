@@ -136,8 +136,8 @@ if len_sym > 0 and (len_sym % struct.calcsize(">8sHL")) == 0 and askYesNo("Impor
     while s_ptr < len_sym:
         s_name, s_id, s_addr = struct.unpack_from(">8sHL", bytes(sym_table), s_ptr)
         s_ptr += struct.calcsize(">8sHL")
-    if s_addr == 0xFFFFFFFF:
-        continue
+        if s_addr == 0xFFFFFFFF:
+            continue
 
         # extended GST format: read name from next slot
         if s_id & 0x48 != 0:
