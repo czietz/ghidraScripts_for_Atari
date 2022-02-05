@@ -65,6 +65,7 @@ len_text = mem.getInt(start.add(0x2))
 len_data = mem.getInt(start.add(0x6))
 len_bss  = mem.getInt(start.add(0xa))
 len_sym  = mem.getInt(start.add(0xe))
+has_relo = (mem.getShort(start.add(0x1a)) == 0)
 
 # Keep symbol table for later use
 if len_sym > 0:
@@ -72,30 +73,31 @@ if len_sym > 0:
     mem.getBytes(start.add(0x1c+len_text+len_data), sym_table)
     sym_table = bytearray(sym_table) # to native Python type
 
-# Relocate program
-prg = start.add(0x1c)
-ptr = start.add(0x1c+len_text+len_data+len_sym) # start of relocation table
-rea = mem.getInt(ptr) # first address to relocate
-ptr = ptr.add(4)
-if rea != 0:
-    # print("Relocating %x (%08x => %08x)" % (rea, mem.getInt(prg.add(rea)), mem.getInt(prg.add(rea))+reloc_addr))
-    mem.setInt(prg.add(rea), mem.getInt(prg.add(rea)) + reloc_addr)
-    while True:
-        offs = mem.getByte(ptr)
-        if offs<0: # byte is *signed* in Java/Jython
-            offs=256+offs
-        ptr = ptr.add(1)
-        if offs == 0: # end of table
-            break
-        if offs == 1: # advance by 254
-            rea = rea + 254
-            continue
-        rea = rea + offs
+if has_relo:
+    # Relocate program
+    prg = start.add(0x1c)
+    ptr = start.add(0x1c+len_text+len_data+len_sym) # start of relocation table
+    rea = mem.getInt(ptr) # first address to relocate
+    ptr = ptr.add(4)
+    if rea != 0:
         # print("Relocating %x (%08x => %08x)" % (rea, mem.getInt(prg.add(rea)), mem.getInt(prg.add(rea))+reloc_addr))
         mem.setInt(prg.add(rea), mem.getInt(prg.add(rea)) + reloc_addr)
-        # when we are already in the data segment, create a dword here
-        if (rea >= len_text):
-            data = flat.createDWord(prg.add(rea)) # FIXME: should be pointer
+        while True:
+            offs = mem.getByte(ptr)
+            if offs<0: # byte is *signed* in Java/Jython
+                offs=256+offs
+            ptr = ptr.add(1)
+            if offs == 0: # end of table
+                break
+            if offs == 1: # advance by 254
+                rea = rea + 254
+                continue
+            rea = rea + offs
+            # print("Relocating %x (%08x => %08x)" % (rea, mem.getInt(prg.add(rea)), mem.getInt(prg.add(rea))+reloc_addr))
+            mem.setInt(prg.add(rea), mem.getInt(prg.add(rea)) + reloc_addr)
+            # when we are already in the data segment, create a dword here
+            if (rea >= len_text):
+                data = flat.createDWord(prg.add(rea)) # FIXME: should be pointer
 
 sym_format = -1
 #
@@ -133,9 +135,13 @@ else:
 
 # Delete everything after end of DATA, create new empty BSS block instead
 if len_bss!=0:
-    mem.split(bl_data, bss_start)
-    bl_bss = mem.getBlocks()[-1] # new block
-    mem.removeBlock(bl_bss, ghidra.util.task.TaskMonitor.DUMMY)
+    try:
+        mem.split(bl_data, bss_start)
+        bl_bss = mem.getBlocks()[-1] # new block
+        mem.removeBlock(bl_bss, ghidra.util.task.TaskMonitor.DUMMY)
+    except:
+        # fails if there is nothing (no relocation table or symbol table) after data section
+        pass
     bl_bss = mem.createUninitializedBlock("BSS", bss_start, len_bss, False)
     bl_bss.setRead(True)
     bl_bss.setWrite(True)
