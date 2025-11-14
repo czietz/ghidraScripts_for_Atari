@@ -57,7 +57,7 @@ magic, sym_size, text_size, data_size, bss_size, stack_size, text_addr, data_add
 # TODO: check if this is always correct
 bss_addr = data_addr + data_size
 
-if magic != 0x9928:
+if (magic & 0xfff8) != 0x9928:
     raise Exception("Unexpected magic number! Not an Idris ST binary?")
 
 # read symbol table
@@ -72,12 +72,21 @@ data_section = bytearray(aout.read(data_size))
 # parse symbol table into list
 symbols = []
 idx = 0
-while idx < sym_size:
-    n_addr, n_type, n_strlen = struct.unpack_from(">LBB", symbol_table, idx)
-    idx = idx + 6
-    n_name = symbol_table[idx:idx+n_strlen]
-    idx = idx + n_strlen
-    symbols += [{"name":n_name,"addr":n_addr,"type":n_type}]
+if magic == 0x9928:
+    while idx < sym_size:
+        n_addr, n_type, n_strlen = struct.unpack_from(">LBB", symbol_table, idx)
+        idx = idx + 6
+        n_name = symbol_table[idx:idx+n_strlen]
+        idx = idx + n_strlen
+        symbols += [{"name":n_name,"addr":n_addr,"type":n_type}]
+else:
+    symbol_length = ((magic & 7) * 2) + 1
+    while idx < sym_size:
+        n_addr, n_type = struct.unpack_from(">LB", symbol_table, idx)
+        idx = idx + 5
+        n_name = symbol_table[idx:idx+symbol_length].rstrip("\0")
+        idx = idx + symbol_length
+        symbols += [{"name":n_name,"addr":n_addr,"type":n_type}]
 
 # create a new 68K ghidra program
 if in_ghidra:
