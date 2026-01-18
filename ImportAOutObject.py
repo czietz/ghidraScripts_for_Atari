@@ -1,6 +1,7 @@
 # This script imports an a.out object file as created my m68k-atari-mint-gcc into Ghidra
 #@author Christian Zietz
 #@category Import
+#@runtime Jython
 #@keybinding 
 #@menupath 
 #@toolbar 

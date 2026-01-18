@@ -1,6 +1,7 @@
 # This script imports an Idris program file
 #@author Christian Zietz
 #@category Import
+#@runtime Jython
 #@keybinding 
 #@menupath 
 #@toolbar 

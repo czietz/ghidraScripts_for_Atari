@@ -1,6 +1,7 @@
 # This script imports an Atari TOS program into Ghidra creating TEXT, DATA, BSS sections
 #@author Christian Zietz
 #@category Import
+#@runtime Jython
 #@keybinding 
 #@menupath 
 #@toolbar 

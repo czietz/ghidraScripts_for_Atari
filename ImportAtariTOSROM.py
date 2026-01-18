@@ -1,6 +1,7 @@
 # This script imports an Atari TOS ROM into Ghidra. Optionally it can also import an EmuTOS symbol file created by map2sym.sh.
 #@author Christian Zietz
 #@category Import
+#@runtime Jython
 #@keybinding 
 #@menupath 
 #@toolbar 
